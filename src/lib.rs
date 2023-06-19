@@ -23,6 +23,11 @@ pub async fn run() {
 }
 
 async fn handler(msg: Message, discord: Http) {
+    if msg.author.bot {
+        log::info!("ignored bot message");
+        return;
+    }
+
     let content = msg.content;
     let channel_id = msg.channel_id;
 
