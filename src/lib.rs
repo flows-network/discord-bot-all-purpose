@@ -8,6 +8,8 @@ use discord_flows::{
 use dotenv::dotenv;
 use flowsnet_platform_sdk::logger;
 
+#[no_mangle]
+#[tokio::main(flavor = "current_thread")]
 pub async fn run() {
     dotenv().ok();
     logger::init();
