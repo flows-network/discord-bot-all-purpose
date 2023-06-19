@@ -12,5 +12,7 @@ discord-flows = "0.4.0"
 dotenv = "0.15.0"
 flowsnet-platform-sdk = "0.1.5"
 log = "0.4.19"
+openai-flows = "0.7.2"
 serde_json = "1.0.96"
+store-flows = "0.3.1"
 tokio_wasi = { version = "1.25.2", features = ["macros", "rt"] }
