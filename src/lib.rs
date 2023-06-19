@@ -50,6 +50,11 @@ impl App {
             return;
         }
 
+        if msg.member.is_some() {
+            log::info!("ignored guild message");
+            return;
+        }
+
         let chat_id = msg.id.to_string();
         let content = msg.content;
         let channel_id = msg.channel_id;
