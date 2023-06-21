@@ -50,8 +50,8 @@ impl App {
             return;
         }
 
-        let pretty = serde_json::to_string_pretty(&msg).unwrap_or_default();
-        log::debug!("{}", pretty);
+        let s = serde_json::to_string(&msg).unwrap_or_default();
+        log::debug!("{}", s);
 
         let chat_id = msg.id.to_string();
         let content = msg.content;
