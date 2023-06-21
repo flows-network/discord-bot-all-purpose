@@ -40,6 +40,8 @@ pub async fn run() {
 
     let app = App { discord, openai };
 
+    // used to debug wasmedge
+    println!();
     bot.listen(|msg| app.handle(msg, help_msg, placeholder_text))
         .await;
 }
