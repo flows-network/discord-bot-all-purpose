@@ -1,11 +1,13 @@
-use std::env;
+use std::{env, str};
 
+use base64::{engine::general_purpose, Engine};
 use dotenv::dotenv;
+use serde_json::json;
 
-use discord_flows::model::MessageId;
+use cloud_vision_flows::text_detection;
 use discord_flows::{
     http::{Http, HttpBuilder},
-    model::{ChannelId, Message},
+    model::{ChannelId, Embed, Message, MessageId},
     ProvidedBot,
 };
 use flowsnet_platform_sdk::logger;
@@ -13,7 +15,6 @@ use openai_flows::{
     chat::{ChatModel, ChatOptions},
     OpenAIFlows,
 };
-use serde_json::json;
 use store_flows as store;
 
 struct App {
@@ -133,24 +134,70 @@ impl App {
                     system_prompt: Some(system_prompt.as_str()),
                 };
 
-                match self
-                    .openai
-                    .chat_completion(&chat_id.to_string(), text, &co)
-                    .await
-                {
-                    Ok(r) => {
-                        self.edit_msg(channel_id, placeholder.id, r.choice).await;
-                    }
-                    Err(e) => {
-                        self.edit_msg(
+                if text.is_empty() {
+                    let urls = get_image_urls(msg.embeds);
+
+                    if urls.is_empty() {
+                        log::debug!("The input message is neither a text nor and image");
+                        self.send_msg(
                             channel_id,
-                            placeholder.id,
-                            "Sorry, an error has occured. Please try again later!",
+                            "Sorry, I cannot understand your message. Can you try again?",
                         )
                         .await;
-                        log::error!("OpenAI returns error: {}", e);
+
+                        return;
                     }
+
+                    for url in urls {
+                        let bs64 = match download_image(url) {
+                            Ok(b) => b,
+                            Err(e) => {
+                                log::warn!("{}", e);
+                                continue;
+                            }
+                        };
+                        let detected = match text_detection(bs64) {
+                            Ok(t) => t,
+                            Err(e) => {
+                                log::debug!("The input image does not contain text: {}", e);
+                                self.send_msg(channel_id, "Sorry, the input image does not contain text. Can you try again").await;
+                                continue;
+                            }
+                        };
+
+                        self.chat(&chat_id, &detected, &co, channel_id, placeholder.id)
+                            .await;
+                    }
+                } else {
+                    self.chat(&chat_id, text, &co, channel_id, placeholder.id)
+                        .await;
                 }
+            }
+        }
+    }
+}
+
+impl App {
+    async fn chat(
+        &self,
+        chat_id: &str,
+        text: &str,
+        co: &ChatOptions<'_>,
+        channel_id: ChannelId,
+        message_id: MessageId,
+    ) {
+        match self.openai.chat_completion(chat_id, text, co).await {
+            Ok(r) => {
+                self.edit_msg(channel_id, message_id, r.choice).await;
+            }
+            Err(e) => {
+                self.edit_msg(
+                    channel_id,
+                    message_id,
+                    "Sorry, an error has occured. Please try again later!",
+                )
+                .await;
+                log::error!("OpenAI returns error: {}", e);
             }
         }
     }
@@ -190,5 +237,33 @@ impl App {
             .await;
         res.map_err(|e| log::error!("failed to send message to discord: {}", e))
             .ok()
+    }
+}
+
+fn get_image_urls(embeds: Vec<Embed>) -> Vec<String> {
+    embeds
+        .iter()
+        .filter_map(|e| e.image.as_ref())
+        .map(|img| img.url.clone())
+        .collect()
+}
+
+fn download_image(url: String) -> Result<String, String> {
+    let mut writer = Vec::new();
+    let resp = http_req::request::get(url, &mut writer);
+
+    match resp {
+        Ok(r) => {
+            if r.status_code().is_success() {
+                Ok(general_purpose::STANDARD.encode(writer))
+            } else {
+                Err(format!(
+                    "response failed: {}, body: {}",
+                    r.reason(),
+                    String::from_utf8_lossy(&writer)
+                ))
+            }
+        }
+        Err(e) => Err(e.to_string()),
     }
 }
