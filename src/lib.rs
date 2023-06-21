@@ -137,16 +137,18 @@ impl App {
                 };
 
                 if text.is_empty() {
+                    log::info!("received empty text");
+
                     let urls = get_image_urls(msg.attachments);
 
                     if urls.is_empty() {
+                        log::info!("no image urls");
                         log::debug!("The input message is neither a text nor and image");
                         self.send_msg(
                             channel_id,
                             "Sorry, I cannot understand your message. Can you try again?",
                         )
                         .await;
-
                         return;
                     }
 
@@ -174,6 +176,7 @@ impl App {
                             .await;
                     }
                 } else {
+                    log::info!("received text: {}", text);
                     self.chat(&chat_id, text, &co, channel_id, placeholder.id)
                         .await;
                 }
