@@ -159,7 +159,10 @@ impl App {
                             }
                         };
                         let detected = match text_detection(bs64) {
-                            Ok(t) => t,
+                            Ok(t) => {
+                                log::debug!("text_detection: {}", t);
+                                t
+                            }
                             Err(e) => {
                                 log::debug!("The input image does not contain text: {}", e);
                                 self.send_msg(channel_id, "Sorry, the input image does not contain text. Can you try again").await;
