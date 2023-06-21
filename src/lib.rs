@@ -243,15 +243,9 @@ impl App {
 fn get_image_urls(attachments: Vec<Attachment>) -> Vec<String> {
     attachments
         .iter()
-        .filter_map(|a| {
-            if a.content_type
-                .as_ref()
-                .is_some_and(|ct| ct.starts_with("image"))
-            {
-                Some(a.url.clone())
-            } else {
-                None
-            }
+        .filter_map(|a| match a.content_type.as_ref() {
+            Some(ct) if ct.starts_with("image") => Some(a.url.clone()),
+            _ => None,
         })
         .collect()
 }
