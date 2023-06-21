@@ -7,7 +7,7 @@ use serde_json::json;
 use cloud_vision_flows::text_detection;
 use discord_flows::{
     http::{Http, HttpBuilder},
-    model::{ChannelId, Embed, Message, MessageId},
+    model::{Attachment, ChannelId, Message, MessageId},
     ProvidedBot,
 };
 use flowsnet_platform_sdk::logger;
@@ -135,7 +135,7 @@ impl App {
                 };
 
                 if text.is_empty() {
-                    let urls = get_image_urls(msg.embeds);
+                    let urls = get_image_urls(msg.attachments);
 
                     if urls.is_empty() {
                         log::debug!("The input message is neither a text nor and image");
@@ -240,11 +240,19 @@ impl App {
     }
 }
 
-fn get_image_urls(embeds: Vec<Embed>) -> Vec<String> {
-    embeds
+fn get_image_urls(attachments: Vec<Attachment>) -> Vec<String> {
+    attachments
         .iter()
-        .filter_map(|e| e.image.as_ref())
-        .map(|img| img.url.clone())
+        .filter_map(|a| {
+            if a.content_type
+                .as_ref()
+                .is_some_and(|ct| ct.starts_with("image"))
+            {
+                Some(a.url.clone())
+            } else {
+                None
+            }
+        })
         .collect()
 }
 
