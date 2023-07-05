@@ -142,11 +142,7 @@ impl App {
                     if urls.is_empty() {
                         log::info!("no image urls");
                         log::debug!("The input message is neither a text nor and image");
-                        self.send_msg(
-                            channel_id,
-                            "Sorry, I cannot understand your message. Can you try again?",
-                        )
-                        .await;
+                        self.edit_msg(channel_id, placeholder.id, "Sorry, I cannot understand your message. Can you try again?").await;
                         return;
                     }
 
@@ -156,6 +152,7 @@ impl App {
                             Ok(b) => b,
                             Err(e) => {
                                 log::warn!("{}", e);
+                                self.edit_msg(channel_id, placeholder.id, "There is a problem with the uploaded file. Can you try again?").await;
                                 continue;
                             }
                         };
@@ -167,7 +164,7 @@ impl App {
                             }
                             Err(e) => {
                                 log::debug!("The input image does not contain text: {}", e);
-                                self.send_msg(channel_id, "Sorry, the input image does not contain text. Can you try again").await;
+                                self.edit_msg(channel_id, placeholder.id, "Sorry, the input image does not contain text. Can you try again").await;
                                 continue;
                             }
                         };
