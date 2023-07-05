@@ -37,10 +37,10 @@ async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_
         log::info!("ignored bot message");
         return;
     }
-    if msg.member.is_some() {
-        log::info!("ignored guild message");
-        return;
-    }
+    // if msg.member.is_some() {
+    //     log::info!("ignored guild message");
+    //     return;
+    // }
     let channel_id = msg.channel_id;
 
     match msg.content.as_str() {
@@ -83,6 +83,7 @@ async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_
                 None,
             );
             log::info!("Started QA converstion for {}", channel_id);
+            return;
         }
         "/summarize" => {
             _ = discord.send_message(
@@ -175,7 +176,6 @@ async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_
             let mut openai = OpenAIFlows::new();
             openai.set_retry_times(3);
 
-
             let mut question = text.to_string();
             if question.is_empty() {
                 log::info!("received empty text");
@@ -267,6 +267,7 @@ async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_
         }
     }
 }
+
 
 fn get_image_urls(attachments: Vec<Attachment>) -> Vec<String> {
     attachments
