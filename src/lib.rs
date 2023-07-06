@@ -25,7 +25,7 @@ pub async fn run() {
     let discord_token = env::var("discord_token").unwrap();
     let bot_id = std::env::var("bot_id").unwrap().parse::<u64>().unwrap();
     let placeholder_text = env::var("placeholder").unwrap_or("Typing ...".to_string());
-    let help_msg = env::var("help_msg").unwrap_or("You can enter text or upload an image with text to chat with this bot. The bot can take several different assistant roles. Type command /qa or /translate or /summarize or /code or /reply_tweet to start.".to_string());
+    let help_msg = env::var("help_msg").unwrap_or("You can enter text or upload an image with text to chat with this bot. The bot can take several different assistant roles. Type command /qa or /translate or /summarize or /medical or /code or /reply_tweet to start.".to_string());
 
     let bot = ProvidedBot::new(discord_token);
     bot.listen(|msg| handler(&bot, bot_id, msg, help_msg, placeholder_text)).await;
