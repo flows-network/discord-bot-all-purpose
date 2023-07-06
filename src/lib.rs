@@ -37,10 +37,10 @@ async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_
         log::info!("ignored bot message");
         return;
     }
-    // if msg.member.is_some() {
-    //     log::info!("ignored guild message");
-    //     return;
-    // }
+    if msg.member.is_some() {
+        log::info!("ignored guild message");
+        return;
+    }
     let channel_id = msg.channel_id;
 
     match msg.content.as_str() {
