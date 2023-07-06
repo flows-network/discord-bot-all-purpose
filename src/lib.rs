@@ -23,23 +23,33 @@ pub async fn run() {
     logger::init();
 
     let discord_token = env::var("discord_token").unwrap();
+    let bot_id = std::env::var("bot_id").unwrap().parse::<u64>().unwrap();
     let placeholder_text = env::var("placeholder").unwrap_or("Typing ...".to_string());
     let help_msg = env::var("help_msg").unwrap_or("You can enter text or upload an image with text to chat with this bot. The bot can take several different assistant roles. Type command /qa or /translate or /summarize or /code or /reply_tweet to start.".to_string());
 
     let bot = ProvidedBot::new(discord_token);
-    bot.listen(|msg| handler(&bot, msg, help_msg, placeholder_text)).await;
+    bot.listen(|msg| handler(&bot, bot_id, msg, help_msg, placeholder_text)).await;
 }
 
-async fn handler(bot: &ProvidedBot, msg: Message, help_msg: String, placeholder_text: String) {
+async fn handler(bot: &ProvidedBot, bot_id: u64, msg: Message, help_msg: String, placeholder_text: String) {
     let discord = bot.get_client();
-
     if msg.author.bot {
         log::info!("ignored bot message");
         return;
     }
     if msg.member.is_some() {
-        log::info!("ignored guild message");
-        return;
+        let mut mentions_me = false;
+        for u in &msg.mentions {
+            log::debug!("The user ID is {}", u.id.as_u64());
+            if *u.id.as_u64() == bot_id {
+                mentions_me = true;
+                break;
+            }
+        }
+        if !mentions_me {
+            log::debug!("ignored guild message");
+            return;
+        }
     }
     let channel_id = msg.channel_id;
 
