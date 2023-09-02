@@ -1,13 +1,13 @@
 use std::{env, str};
 
 use base64::{engine::general_purpose, Engine};
-use dotenv::dotenv;
 use serde_json::json;
 
 use cloud_vision_flows::text_detection;
 use discord_flows::{
     model::{Attachment, Message},
     ProvidedBot, Bot,
+    message_handler,
 };
 use flowsnet_platform_sdk::logger;
 use openai_flows::{
@@ -18,21 +18,23 @@ use store_flows as store;
 
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
-pub async fn run() {
-    dotenv().ok();
-    logger::init();
+pub async fn on_deploy() {
+    let token = std::env::var("discord_token").unwrap();
+    let bot = ProvidedBot::new(token);
+    bot.listen_to_messages().await;
+}
 
+#[message_handler]
+async fn handler(msg: Message) {
+    logger::init();
     let discord_token = env::var("discord_token").unwrap();
     let bot_id = std::env::var("bot_id").unwrap().parse::<u64>().unwrap();
     let placeholder_text = env::var("placeholder").unwrap_or("Typing ...".to_string());
     let help_msg = env::var("help_msg").unwrap_or("You can enter text or upload an image with text to chat with this bot. The bot can take several different assistant roles. Type command /qa or /translate or /summarize or /medical or /code or /reply_tweet to start.".to_string());
 
     let bot = ProvidedBot::new(discord_token);
-    bot.listen(|msg| handler(&bot, bot_id, msg, help_msg, placeholder_text)).await;
-}
-
-async fn handler(bot: &ProvidedBot, bot_id: u64, msg: Message, help_msg: String, placeholder_text: String) {
     let discord = bot.get_client();
+
     if msg.author.bot {
         log::info!("ignored bot message");
         return;
@@ -160,7 +162,7 @@ async fn handler(bot: &ProvidedBot, bot_id: u64, msg: Message, help_msg: String,
             let placeholder  = discord.send_message(
                 channel_id.into(),
                 &serde_json::json!({
-                    "content": placeholder_text
+                    "content": &placeholder_text
                 }),
             ).await.unwrap();
 
