@@ -281,6 +281,7 @@ async fn handler(msg: Message) {
 
             match chat_inner_async(&system_prompt, &question, 512, &model).await {
                 Ok(r) => {
+                    log::info!("Answer: {}", r);
                     let resps = sub_strings(&r, 1800);
 
                     _ = discord.edit_message(
@@ -303,6 +304,7 @@ async fn handler(msg: Message) {
                     }
                 }
                 Err(e) => {
+                    log::error!("LLM returns error: {}", e);
                     _ = discord.edit_message(
                         channel_id.into(),
                         placeholder.id.into(),
